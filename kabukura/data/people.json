@@ -1,0 +1,34 @@
+[
+  {
+    "id": "ats-jpx",
+    "name": "AtsJPX",
+    "emoji": "👨‍💼",
+    "tag": "失職→一発逆転の株クラ百戦録",
+    "date": "4/24",
+    "episodes": 2
+  },
+  {
+    "id": "aki-record",
+    "name": "AKiの記録",
+    "emoji": "🧑‍💻",
+    "tag": "元ITエンジニアの株式投資録",
+    "date": "4/24",
+    "episodes": 4
+  },
+  {
+    "id": "todo-challenge",
+    "name": "TODOチャレンジ",
+    "emoji": "👩‍💼",
+    "tag": "小さな目標を積み重ねる投資日記",
+    "date": "4/24",
+    "episodes": 6
+  },
+  {
+    "id": "akirame",
+    "name": "諦分被調査",
+    "emoji": "🧓",
+    "tag": "定年後の資産運用、実録レポート",
+    "date": "4/25",
+    "episodes": 3
+  }
+]

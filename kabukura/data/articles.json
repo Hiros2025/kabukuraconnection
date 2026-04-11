@@ -1,0 +1,54 @@
+[
+  {
+    "id": "article-001",
+    "title": "サンリオ、業績循環の波及から社信記録の増か",
+    "subtitle": "海外展開と新ライセンスビジネスの行方を株クラ視点で分析",
+    "category": "銘柄分析",
+    "date": "2024/04/24",
+    "time": "16:15",
+    "comments": 45,
+    "views": 1820,
+    "emoji": "📊",
+    "thumb": "thumb-1",
+    "featured": true
+  },
+  {
+    "id": "article-002",
+    "title": "激天の次のシナリオとなる？米国金融政策と日銀の利上げシナリオ",
+    "subtitle": "専門家が語る今後の相場展望と注目ポイント",
+    "category": "マクロ経済",
+    "date": "2024/04/24",
+    "time": "16:15",
+    "comments": 60,
+    "views": 2340,
+    "emoji": "📈",
+    "thumb": "thumb-2",
+    "featured": false
+  },
+  {
+    "id": "article-003",
+    "title": "夏来浮上、そうに重勤倍期待なるか — 半導体関連株の最新動向",
+    "subtitle": "国内外の半導体市場トレンドと個別銘柄の投資判断",
+    "category": "セクター分析",
+    "date": "2024/04/24",
+    "time": "16:15",
+    "comments": 111,
+    "views": 4200,
+    "emoji": "💹",
+    "thumb": "thumb-3",
+    "featured": false
+  },
+  {
+    "id": "article-004",
+    "title": "株クラ注目投資家インタビュー — 2024年後半の戦略と注目セクター",
+    "subtitle": "著名個人投資家が語る資産形成のコツと銘柄選びの哲学",
+    "category": "インタビュー",
+    "date": "2024/04/24",
+    "time": "16:15",
+    "comments": 89,
+    "views": 3100,
+    "emoji": "🎙️",
+    "thumb": "thumb-4",
+    "featured": false
+  }
+]

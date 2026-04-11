@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>株クラ Connection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --sakura: #e8709a; --sakura-light: #f5c6d8; --sakura-pale: #fdf0f5;
+  --navy: #1a2340; --navy-mid: #2d3a5c; --gold: #c9a84c;
+  --green-up: #1a9c5b; --red-dn: #d63c3c;
+  --text-main: #1a2340; --text-sub: #6b7280;
+  --bg: #f4f4f7; --card-bg: #fff; --border: rgba(0,0,0,0.08);
+}
+body { font-family: 'Noto Sans JP','Noto Sans SC',sans-serif; background: var(--bg); color: var(--text-main); min-height: 100vh; }
+.header { background: #fff; border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; gap: 1.2rem; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+.logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; cursor: pointer; }
+.logo-icon { width: 32px; height: 32px; }
+.logo-text { font-family: 'Noto Serif JP',serif; font-size: 20px; font-weight: 700; color: var(--sakura); }
+.logo-text span { color: var(--navy); }
+.search-bar { flex: 1; max-width: 400px; display: flex; align-items: center; background: #f4f4f6; border-radius: 24px; padding: 0 14px; gap: 8px; height: 38px; border: 1px solid transparent; transition: border-color 0.2s; }
+.search-bar:focus-within { border-color: var(--sakura-light); background: #fff; }
+.search-bar input { border: none; background: transparent; outline: none; font-size: 13px; color: var(--text-main); width: 100%; font-family: inherit; }
+.search-btn { background: var(--navy); color: #fff; border: none; border-radius: 20px; padding: 6px 14px; font-size: 12px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+.header-icons { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.icon-btn { background: none; border: none; cursor: pointer; color: var(--text-sub); padding: 4px; transition: color 0.2s; }
+.icon-btn:hover { color: var(--sakura); }
+.lang-switcher { display: flex; gap: 2px; background: #f0f0f3; border-radius: 20px; padding: 3px; }
+.lang-btn { border: none; background: none; border-radius: 16px; padding: 4px 10px; font-size: 11px; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--text-sub); transition: all 0.2s; white-space: nowrap; }
+.lang-btn.active { background: #fff; color: var(--navy); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.nav { background: var(--navy); display: flex; align-items: center; padding: 0 2rem; overflow-x: auto; }
+.nav a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; padding: 13px 18px; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; white-space: nowrap; }
+.nav a:hover { color: #fff; }
+.nav a.active { color: #fff; border-bottom-color: var(--sakura); }
+.view { display: none; }
+.view.active { display: block; }
+.main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+.left { display: flex; flex-direction: column; gap: 1.5rem; }
+.right { display: flex; flex-direction: column; gap: 1.5rem; }
+.hero { background: linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 55%,#3d1a3a 100%); border-radius: 16px; overflow: hidden; position: relative; padding: 2rem; min-height: 230px; display: flex; flex-direction: column; justify-content: space-between; }
+.sakura-petals { position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; overflow: hidden; }
+.petal { position: absolute; width: 9px; height: 9px; background: rgba(245,198,216,0.45); border-radius: 50% 0 50% 0; animation: fall linear infinite; }
+@keyframes fall { 0%{transform:translateY(-20px) rotate(0deg);opacity:.8}100%{transform:translateY(260px) rotate(400deg);opacity:0} }
+.hero-badge { background: rgba(232,112,154,0.25); border: 1px solid rgba(232,112,154,0.4); color: var(--sakura-light); font-size: 11px; padding: 3px 12px; border-radius: 12px; display: inline-block; margin-bottom: 10px; width: fit-content; position: relative; z-index: 1; }
+.hero-title { font-family: 'Noto Serif JP',serif; font-size: 26px; font-weight: 700; color: #fff; line-height: 1.4; margin-bottom: 12px; position: relative; z-index: 1; }
+.hero-sub { color: rgba(255,255,255,0.65); font-size: 12px; line-height: 1.8; max-width: 420px; position: relative; z-index: 1; }
+.hero-stats { display: flex; gap: 1rem; margin-top: 1.5rem; position: relative; z-index: 1; flex-wrap: wrap; }
+.stat-item { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+.stat-label { font-size: 10px; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
+.stat-value { font-size: 20px; font-weight: 700; color: var(--green-up); }
+.stat-mini { font-size: 10px; color: rgba(255,255,255,0.5); }
+.chart-mini { width: 52px; height: 26px; }
+.hero-meta { position: absolute; bottom: 1rem; right: 1.5rem; color: rgba(255,255,255,0.4); font-size: 11px; display: flex; gap: 12px; z-index: 1; }
+.section-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+.section-title { font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+.section-title::before { content:''; display:inline-block; width:3px; height:16px; background:var(--sakura); border-radius:2px; flex-shrink:0; }
+.section-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab { font-size: 11px; padding: 4px 10px; border-radius: 12px; cursor: pointer; color: var(--text-sub); background: none; border: none; font-family: inherit; transition: all 0.2s; }
+.tab:hover { background: #f3f4f6; }
+.tab.active { background: var(--sakura-pale); color: var(--sakura); font-weight: 500; }
+.news-item { display: flex; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; align-items: flex-start; }
+.news-item:hover { background: #fafafa; }
+.news-item:last-child { border-bottom: none; }
+.news-thumb { width: 84px; height: 58px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.thumb-1{background:linear-gradient(135deg,#1a3a6e,#2d5a9e)} .thumb-2{background:linear-gradient(135deg,#1a4a3a,#2d7a5a)} .thumb-3{background:linear-gradient(135deg,#4a2d1a,#8a5a3a)} .thumb-4{background:linear-gradient(135deg,#2d1a4a,#5a3a8a)}
+.news-body { flex: 1; min-width: 0; }
+.news-cat { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--sakura-pale); color: var(--sakura); margin-bottom: 4px; }
+.news-title { font-size: 13px; font-weight: 500; line-height: 1.55; margin-bottom: 4px; color: var(--text-main); display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+.news-sub { font-size: 11px; color: var(--text-sub); margin-bottom: 6px; display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden; }
+.news-meta { display: flex; align-items: center; gap: 10px; font-size: 10px; color: var(--text-sub); }
+.people-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 16px 20px; }
+.person-card { text-align: center; cursor: pointer; }
+.person-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 8px; background: linear-gradient(135deg,#f5c6d8,#e8709a); display: flex; align-items: center; justify-content: center; font-size: 30px; border: 2px solid var(--sakura-light); transition: transform 0.2s; }
+.person-card:hover .person-avatar { transform: scale(1.05); }
+.person-name { font-size: 12px; font-weight: 500; margin-bottom: 3px; }
+.person-tag { font-size: 10px; color: var(--text-sub); line-height: 1.4; }
+.person-meta { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10px; color: var(--text-sub); margin-top: 4px; }
+.ranking-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.ranking-header { background: var(--navy); padding: 12px 16px; }
+.ranking-title { color: #fff; font-size: 15px; font-weight: 700; }
+.ranking-sub { font-size: 10px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.ranking-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--border); }
+.ranking-item:hover { background: var(--sakura-pale); }
+.ranking-item:last-child { border-bottom: none; }
+.rank-badge { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.rank-1{background:#ffd700;color:#7a5c00} .rank-2{background:#d0d0d0;color:#555} .rank-3{background:#c07040;color:#fff}
+.rank-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#f5c6d8,#d4698e); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1.5px solid var(--sakura-light); }
+.rank-info { flex: 1; min-width: 0; }
+.rank-name { font-size: 13px; font-weight: 500; }
+.rank-desc { font-size: 10px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-score { font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.ranking-cta { background: linear-gradient(135deg,var(--sakura),#c45580); color: #fff; border: none; width: calc(100% - 32px); margin: 12px 16px; padding: 10px; border-radius: 24px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+.ranking-cta:hover { opacity: 0.9; }
+.premium-card { background: linear-gradient(135deg,var(--navy),#2d1a4d); border-radius: 12px; padding: 1.25rem; position: relative; overflow: hidden; }
+.premium-card::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:rgba(201,168,76,0.15); }
+.premium-title { color: var(--gold); font-size: 15px; font-weight: 700; margin-bottom: 8px; position: relative; z-index: 1; }
+.premium-desc { color: rgba(255,255,255,0.7); font-size: 11px; line-height: 1.7; margin-bottom: 12px; position: relative; z-index: 1; }
+.premium-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 20px; padding: 7px 20px; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; position: relative; z-index: 1; }
+.article-view { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.article-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-sub); font-size: 13px; cursor: pointer; margin-bottom: 1.5rem; background: none; border: none; font-family: inherit; transition: color 0.2s; }
+.article-back:hover { color: var(--sakura); }
+.article-container { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; max-width: 780px; }
+.article-hero { height: 220px; display: flex; align-items: center; justify-content: center; font-size: 64px; }
+.article-body { padding: 2rem; }
+.article-cat { display: inline-block; font-size: 11px; padding: 3px 12px; border-radius: 12px; background: var(--sakura-pale); color: var(--sakura); margin-bottom: 8px; }
+.article-lang-badge { display: inline-flex; gap: 6px; margin-bottom: 12px; margin-left: 8px; vertical-align: middle; }
+.article-lang-badge span { font-size: 10px; padding: 2px 8px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); background: #f4f4f6; color: var(--text-sub); transition: all 0.2s; }
+.article-lang-badge span.active { background: var(--sakura-pale); color: var(--sakura); border-color: var(--sakura-light); }
+.article-title { font-family: 'Noto Serif JP',serif; font-size: 22px; font-weight: 700; line-height: 1.5; margin-bottom: 10px; }
+.article-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-sub); margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+.article-content { font-size: 14px; line-height: 2; margin-bottom: 2rem; }
+.article-content p { margin-bottom: 1.2rem; }
+.article-content h2 { font-size: 17px; font-weight: 700; margin: 2rem 0 1rem; padding-left: 12px; border-left: 3px solid var(--sakura); }
+.comment-section { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); padding: 2rem; max-width: 780px; margin-top: 1.5rem; }
+.comment-title { font-size: 16px; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; }
+.comment-title::before { content:''; display:inline-block; width:3px; height:18px; background:var(--sakura); border-radius:2px; }
+.comment-info { background: var(--sakura-pale); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #6b3050; line-height: 1.7; margin-bottom: 1.5rem; }
+.comment-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 2rem; }
+.comment-form input,.comment-form textarea { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; font-family: inherit; color: var(--text-main); outline: none; transition: border-color 0.2s; background: #fafafa; }
+.comment-form input:focus,.comment-form textarea:focus { border-color: var(--sakura-light); background: #fff; }
+.comment-form textarea { height: 100px; resize: vertical; }
+.comment-submit { background: var(--sakura); color: #fff; border: none; border-radius: 20px; padding: 10px 24px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; align-self: flex-start; }
+.comment-submit:hover { opacity: 0.88; }
+.comments-list { display: flex; flex-direction: column; gap: 16px; }
+.comment-item { display: flex; gap: 12px; }
+.comment-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#f5c6d8,#e8709a); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.comment-bubble { flex: 1; background: #fafafa; border-radius: 0 12px 12px 12px; padding: 12px 16px; border: 1px solid var(--border); }
+.comment-author { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+.comment-date { font-size: 10px; color: var(--text-sub); margin-left: 8px; font-weight: 400; }
+.comment-text { font-size: 13px; line-height: 1.7; }
+.admin-view { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+.admin-header { background: var(--navy); color: #fff; border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+.admin-title { font-size: 20px; font-weight: 700; }
+.admin-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+.admin-card { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 1.5rem; }
+.admin-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.admin-card-header::before { content:''; display:inline-block; width:3px; height:16px; background:var(--sakura); border-radius:2px; }
+.admin-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text-sub); }
+.form-input,.form-select,.form-textarea { border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 13px; font-family: inherit; color: var(--text-main); outline: none; transition: border-color 0.2s; background: #fafafa; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color: var(--sakura-light); background: #fff; }
+.form-textarea { height: 80px; resize: vertical; }
+.form-actions { display: flex; gap: 10px; padding: 0 1.5rem 1.5rem; }
+.btn-primary { background: var(--sakura); color: #fff; border: none; border-radius: 20px; padding: 9px 24px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-secondary { background: none; color: var(--text-sub); border: 1px solid var(--border); border-radius: 20px; padding: 9px 24px; font-size: 13px; font-family: inherit; cursor: pointer; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th { font-size: 11px; font-weight: 500; color: var(--text-sub); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); background: #fafafa; }
+.admin-table td { font-size: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.admin-table tr:last-child td { border-bottom: none; }
+.tbl-actions { display: flex; gap: 6px; }
+.tbl-btn { font-size: 11px; padding: 3px 10px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); background: none; font-family: inherit; }
+.tbl-btn-edit:hover { background: var(--sakura-pale); border-color: var(--sakura-light); color: var(--sakura); }
+.tbl-btn-del { color: var(--red-dn); }
+.tbl-btn-del:hover { background: #fff0f0; }
+.lang-tabs { display: flex; gap: 4px; margin-bottom: 4px; }
+.lang-tab { font-size: 11px; padding: 5px 14px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); background: #f4f4f6; color: var(--text-sub); font-family: inherit; transition: all 0.2s; }
+.lang-tab.active { background: var(--sakura-pale); color: var(--sakura); border-color: var(--sakura-light); font-weight: 500; }
+.success-toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--navy); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+.success-toast.show { opacity: 1; }
+.footer { background: var(--navy); color: rgba(255,255,255,0.5); text-align: center; padding: 2rem; font-size: 12px; margin-top: 2rem; }
+.footer a { color: rgba(255,255,255,0.6); text-decoration: none; margin: 0 8px; }
+.footer a:hover { color: var(--sakura-light); }
+.footer-logo { color: var(--sakura); font-weight: 700; font-size: 16px; margin-bottom: 10px; }
+.footer-links { margin-bottom: 10px; }
+::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-thumb{background:var(--sakura-light);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" onclick="showView('top')">
+    <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="15" fill="#fdf0f5" stroke="#e8709a" stroke-width="1.5"/>
+      <path d="M16 8 Q18 12 16 16 Q14 20 16 24" stroke="#e8709a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M10 12 Q14 14 16 16" stroke="#e8709a" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.7"/>
+      <path d="M22 12 Q18 14 16 16" stroke="#e8709a" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.7"/>
+      <circle cx="16" cy="16" r="2" fill="#e8709a"/>
+    </svg>
+    <span class="logo-text">株クラ<span> Connection</span></span>
+  </div>
+  <div class="search-bar">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="検索 / Search / 搜索">
+    <button class="search-btn" onclick="doSearch()" id="btn-search">検索</button>
+  </div>
+  <div class="header-icons">
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('ja')">日本語</button>
+      <button class="lang-btn" onclick="setLang('en')">English</button>
+      <button class="lang-btn" onclick="setLang('zh')">中文</button>
+    </div>
+    <button class="icon-btn" onclick="showView('admin')" title="管理画面">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </button>
+    <button class="icon-btn">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav" id="main-nav">
+  <a class="active" onclick="showView('top');setNavActive(this)" id="nav-top">トップ</a>
+  <a onclick="setNavActive(this)" id="nav-browse">株クラ遊覧</a>
+  <a onclick="setNavActive(this)" id="nav-talk">話術</a>
+  <a onclick="setNavActive(this)" id="nav-investor">投資家</a>
+  <a onclick="setNavActive(this)" id="nav-diary">株花日記</a>
+</nav>
+
+<!-- TOP -->
+<div id="view-top" class="view active">
+  <div class="main">
+    <div class="left">
+      <div class="hero">
+        <div class="sakura-petals" id="petals"></div>
+        <div style="position:relative;z-index:1;">
+          <div class="hero-badge" id="hero-badge">📅 4/24 マーケットサマリー</div>
+          <div class="hero-title" id="hero-title">今日の<br>株クラ相場まとめ</div>
+          <div class="hero-sub" id="hero-sub">東京市場は続伸。主力株を中心に買いが広がり、日経平均は年初来高値を更新。個人投資家の間ではグロース株への注目が集まっています。</div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div>
+              <div class="stat-label" id="stat1-label">本日の注目株</div>
+              <div class="stat-value">+5.91%</div>
+              <div class="stat-mini" id="stat1-name">楽天グループ</div>
+            </div>
+            <svg class="chart-mini" viewBox="0 0 52 26"><polyline points="2,22 10,18 20,20 30,12 38,8 46,4 50,6" fill="none" stroke="#1a9c5b" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat-item">
+            <div>
+              <div class="stat-label" id="stat2-label">騰落比</div>
+              <div class="stat-value">+2.33%</div>
+              <div class="stat-mini" id="stat2-name">東証一部全体</div>
+            </div>
+            <svg class="chart-mini" viewBox="0 0 52 26"><polyline points="2,20 10,15 18,17 26,10 34,13 42,6 50,8" fill="none" stroke="#1a9c5b" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="hero-meta"><span>4/24 16:15</span><span>💬 123</span></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title" id="section-topics">主要トピックス</div>
+          <div class="section-tabs">
+            <button class="tab active" onclick="filterArticles('all',this)" id="tab-all">全て</button>
+            <button class="tab" onclick="filterArticles('stock',this)" id="tab-stock">銘柄</button>
+            <button class="tab" onclick="filterArticles('macro',this)" id="tab-macro">経済</button>
+            <button class="tab" onclick="filterArticles('interview',this)" id="tab-interview">インタビュー</button>
+          </div>
+        </div>
+        <div id="articles-list"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header"><div class="section-title" id="section-people">株クラで生きる人々</div></div>
+        <div class="people-grid" id="people-grid"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="ranking-card">
+        <div class="ranking-header">
+          <div class="ranking-title" id="ranking-title">Ranking</div>
+          <div class="ranking-sub" id="ranking-sub">株インフルエンサーランキング</div>
+        </div>
+        <div id="ranking-list"></div>
+        <button class="ranking-cta" id="ranking-cta">株クラ努力図へ ›</button>
+      </div>
+      <div class="premium-card">
+        <div class="premium-title" id="premium-title">🌸 株クラブレミアム</div>
+        <div class="premium-desc" id="premium-desc">厳選された銘柄と解説コラム — プロ投資家の先読みインサイトを毎日お届けします。</div>
+        <button class="premium-btn" id="premium-btn">詳細はこちら ›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARTICLE -->
+<div id="view-article" class="view">
+  <div class="article-view">
+    <button class="article-back" onclick="showView('top')" id="btn-back">← トップへ戻る</button>
+    <div class="article-container">
+      <div class="article-hero" id="article-hero"></div>
+      <div class="article-body">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:12px;">
+          <div class="article-cat" id="article-cat"></div>
+          <div class="article-lang-badge" id="article-lang-badge"></div>
+        </div>
+        <div class="article-title" id="article-title"></div>
+        <div class="article-meta" id="article-meta"></div>
+        <div class="article-content" id="article-content"></div>
+      </div>
+    </div>
+    <div class="comment-section">
+      <div class="comment-title" id="comment-title">コメント</div>
+      <div class="comment-info" id="comment-info">💡 コメントはニックネームで投稿できます。投資に関する情報交換を楽しみましょう。</div>
+      <div class="comment-form">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <input type="text" id="commentName" placeholder="ニックネーム" maxlength="20">
+          <input type="text" id="commentEmoji" placeholder="😊" maxlength="4">
+        </div>
+        <textarea id="commentText" placeholder="コメントを入力してください..."></textarea>
+        <button class="comment-submit" onclick="submitComment()" id="btn-comment-submit">投稿する</button>
+      </div>
+      <div class="comments-list" id="comments-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="view-admin" class="view">
+  <div class="admin-view">
+    <div class="admin-header">
+      <div><div class="admin-title">⚙️ 管理画面 / Admin / 管理</div><div class="admin-sub">記事・ランキングの管理</div></div>
+      <button class="btn-primary" onclick="showView('top')" style="background:rgba(255,255,255,0.15);font-size:12px;padding:7px 16px;">← 戻る</button>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-header">記事を追加する（3か国語対応）</div>
+      <div class="admin-form">
+        <div class="lang-tabs">
+          <button class="lang-tab active" onclick="setAdminLang('ja',this)">🇯🇵 日本語</button>
+          <button class="lang-tab" onclick="setAdminLang('en',this)">🇺🇸 English</button>
+          <button class="lang-tab" onclick="setAdminLang('zh',this)">🇨🇳 中文</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">タイトル / Title / 标题</label>
+          <input type="text" class="form-input" id="newTitle_ja" placeholder="記事タイトル（日本語）">
+          <input type="text" class="form-input" id="newTitle_en" placeholder="Article Title (English)" style="display:none;margin-top:8px">
+          <input type="text" class="form-input" id="newTitle_zh" placeholder="文章标题（中文）" style="display:none;margin-top:8px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">サブタイトル / Subtitle / 副标题</label>
+          <input type="text" class="form-input" id="newSub_ja" placeholder="概要（日本語）">
+          <input type="text" class="form-input" id="newSub_en" placeholder="Subtitle (English)" style="display:none;margin-top:8px">
+          <input type="text" class="form-input" id="newSub_zh" placeholder="副标题（中文）" style="display:none;margin-top:8px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">本文 / Content / 正文</label>
+          <textarea class="form-textarea" id="newBody_ja" placeholder="本文（日本語）" style="height:90px"></textarea>
+          <textarea class="form-textarea" id="newBody_en" placeholder="Content (English)" style="display:none;height:90px;margin-top:8px"></textarea>
+          <textarea class="form-textarea" id="newBody_zh" placeholder="正文（中文）" style="display:none;height:90px;margin-top:8px"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">カテゴリ</label>
+            <select class="form-select" id="newCategory">
+              <option value="stock">銘柄分析</option>
+              <option value="macro">マクロ経済</option>
+              <option value="sector">セクター分析</option>
+              <option value="interview">インタビュー</option>
+              <option value="diary">日記</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">絵文字アイコン</label>
+            <input type="text" class="form-input" id="newEmoji" placeholder="📊" maxlength="4">
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="addArticle()">記事を追加</button>
+        <button class="btn-secondary" onclick="clearForm()">クリア</button>
+      </div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-header">記事一覧</div>
+      <table class="admin-table">
+        <thead><tr><th>タイトル（日）</th><th style="text-align:center">EN</th><th style="text-align:center">ZH</th><th>カテゴリ</th><th>日付</th><th>操作</th></tr></thead>
+        <tbody id="admin-table-body"></tbody>
+      </table>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-header">ランキングを更新する</div>
+      <div class="admin-form">
+        <div id="ranking-edit-list"></div>
+        <button class="btn-primary" onclick="saveRanking()" style="align-self:flex-start">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-logo">🌸 株クラ Connection</div>
+  <div class="footer-links">
+    <a href="#" id="footer-terms">利用規約</a>
+    <a href="#" id="footer-privacy">プライバシーポリシー</a>
+    <a href="#" id="footer-contact">お問い合わせ</a>
+  </div>
+  <div>© 2024 株クラ Connection. All rights reserved.</div>
+</footer>
+
+<div class="success-toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// 3か国語テキスト — ここを編集して翻訳を修正
+// ══════════════════════════════════════════
+const T = {
+  ja:{
+    search:'検索', back:'← トップへ戻る',
+    nav:['トップ','株クラ遊覧','話術','投資家','株花日記'],
+    hero_badge:'📅 4/24 マーケットサマリー',
+    hero_title:'今日の<br>株クラ相場まとめ',
+    hero_sub:'東京市場は続伸。主力株を中心に買いが広がり、日経平均は年初来高値を更新。個人投資家の間ではグロース株への注目が集まっています。',
+    stat1_label:'本日の注目株', stat1_name:'楽天グループ',
+    stat2_label:'騰落比', stat2_name:'東証一部全体',
+    topics:'主要トピックス', people:'株クラで生きる人々',
+    tabs:['全て','銘柄','経済','インタビュー'],
+    ranking_title:'Ranking', ranking_sub:'株インフルエンサーランキング', ranking_cta:'株クラ努力図へ ›',
+    premium_title:'🌸 株クラブレミアム',
+    premium_desc:'厳選された銘柄と解説コラム — プロ投資家の先読みインサイトを毎日お届けします。',
+    premium_btn:'詳細はこちら ›',
+    views:'閲覧', comments_word:'コメント',
+    comment_title:'コメント',
+    comment_info:'💡 コメントはニックネームで投稿できます。投資に関する情報交換を楽しみましょう。',
+    comment_name_ph:'ニックネーム', comment_ph:'コメントを入力してください...', comment_btn:'投稿する',
+    no_comments:'まだコメントはありません。最初のコメントを投稿しましょう！',
+    footer:['利用規約','プライバシーポリシー','お問い合わせ'],
+    cat:{stock:'銘柄分析',macro:'マクロ経済',sector:'セクター分析',interview:'インタビュー',diary:'日記'},
+    episode:'話', toast_comment:'コメントを投稿しました！', toast_add:'記事を追加しました！', toast_rank:'ランキングを更新しました！', toast_del:'記事を削除しました'
+  },
+  en:{
+    search:'Search', back:'← Back to Top',
+    nav:['Top','Browse','Discussion','Investors','Diary'],
+    hero_badge:'📅 Apr 24 Market Summary',
+    hero_title:"Today's<br>Market Recap",
+    hero_sub:'Tokyo markets continued to rise. Buying spread across blue-chip stocks, with the Nikkei hitting a year-to-date high. Growth stocks are drawing increasing attention among individual investors.',
+    stat1_label:"Today's top stock", stat1_name:'Rakuten Group',
+    stat2_label:'Advance/Decline', stat2_name:'TSE Prime overall',
+    topics:'Top Topics', people:'People of Kabukura',
+    tabs:['All','Stocks','Economy','Interviews'],
+    ranking_title:'Ranking', ranking_sub:'Influencer Rankings', ranking_cta:'View Full Ranking ›',
+    premium_title:'🌸 Kabukura Premium',
+    premium_desc:'Curated stock picks & expert columns — get pro investor insights delivered daily.',
+    premium_btn:'Learn more ›',
+    views:'views', comments_word:'comments',
+    comment_title:'Comments',
+    comment_info:'💡 Post with a nickname. Share investment insights and enjoy the discussion.',
+    comment_name_ph:'Nickname', comment_ph:'Write a comment...', comment_btn:'Post',
+    no_comments:'No comments yet. Be the first to post!',
+    footer:['Terms','Privacy Policy','Contact'],
+    cat:{stock:'Stock Analysis',macro:'Macro Economy',sector:'Sector Analysis',interview:'Interview',diary:'Diary'},
+    episode:'ep.', toast_comment:'Comment posted!', toast_add:'Article added!', toast_rank:'Ranking updated!', toast_del:'Article deleted'
+  },
+  zh:{
+    search:'搜索', back:'← 返回首页',
+    nav:['首页','浏览','讨论','投资者','投资日记'],
+    hero_badge:'📅 4月24日 市场摘要',
+    hero_title:'今日<br>股市行情汇总',
+    hero_sub:'东京股市延续上涨走势，以蓝筹股为主的买盘扩大，日经指数创今年新高。个人投资者对成长股的关注度持续上升。',
+    stat1_label:'今日领涨股', stat1_name:'乐天集团',
+    stat2_label:'涨跌比率', stat2_name:'东证一部整体',
+    topics:'热门话题', people:'社区人物',
+    tabs:['全部','个股','宏观','访谈'],
+    ranking_title:'排行榜', ranking_sub:'股市达人排行', ranking_cta:'查看完整排行 ›',
+    premium_title:'🌸 高级会员',
+    premium_desc:'精选股票分析与专家专栏 — 每天为您送上专业投资洞察。',
+    premium_btn:'了解详情 ›',
+    views:'浏览', comments_word:'评论',
+    comment_title:'评论',
+    comment_info:'💡 可以用昵称发表评论，欢迎分享投资见解、交流讨论。',
+    comment_name_ph:'昵称', comment_ph:'请输入评论...', comment_btn:'发表',
+    no_comments:'暂无评论，来发表第一条吧！',
+    footer:['使用条款','隐私政策','联系我们'],
+    cat:{stock:'个股分析',macro:'宏观经济',sector:'行业分析',interview:'人物访谈',diary:'投资日记'},
+    episode:'篇', toast_comment:'评论发表成功！', toast_add:'文章已添加！', toast_rank:'排行榜已更新！', toast_del:'文章已删除'
+  }
+};
+
+// ══════════════════════════════════════════
+// 記事データ（タイトル・本文を3言語で書く）
+// ══════════════════════════════════════════
+let articles = [
+  { id:'a001', category:'stock', emoji:'📊', thumb:'thumb-1', date:'2024/04/24', time:'16:15', comments:45, views:1820,
+    title:{ja:'サンリオ、業績循環の波及から社信記録の増か', en:'Sanrio: Can Brand Power Drive Record Profits?', zh:'三丽鸥：品牌力能否推动业绩创历史新高？'},
+    subtitle:{ja:'海外展開と新ライセンスビジネスの行方を株クラ視点で分析', en:'Analyzing overseas expansion and new licensing models', zh:'从股市视角分析海外扩张与授权业务走向'},
+    content:{ja:'<p>サンリオの海外展開が加速している。特にアジア市場では...</p><h2>注目ポイント</h2><p>ライセンス収入の比率が高まっており、今後の業績を左右する重要な指標となっている。</p>',
+             en:'<p>Sanrio\'s international expansion is accelerating, especially in Asian markets...</p><h2>Key Points</h2><p>Rising licensing revenue ratios are becoming a critical indicator of future performance.</p>',
+             zh:'<p>三丽鸥的海外扩张持续加速，尤其是在亚洲市场...</p><h2>关注要点</h2><p>授权收入比例的提升正成为影响未来业绩的重要指标。</p>'}
+  },
+  { id:'a002', category:'macro', emoji:'📈', thumb:'thumb-2', date:'2024/04/24', time:'16:15', comments:60, views:2340,
+    title:{ja:'激天の次のシナリオとなる？米国金融政策と日銀の利上げシナリオ', en:'Fed Policy vs. BOJ: What Comes Next?', zh:'美联储政策与日银加息：下一步走向何方？'},
+    subtitle:{ja:'専門家が語る今後の相場展望と注目ポイント', en:'Expert views on market outlook and key factors to watch', zh:'专家解读市场走势与关键关注点'},
+    content:{ja:'<p>米国の金融政策と日本の利上げ動向が交差する局面...</p><h2>為替への影響</h2><p>円ドル相場はこの数週間で大きく動いており、輸出企業への影響が注目される。</p>',
+             en:'<p>U.S. monetary policy and Japan\'s rate hike trajectory are colliding...</p><h2>Forex Impact</h2><p>The yen-dollar rate has moved sharply in recent weeks, drawing attention to exporters.</p>',
+             zh:'<p>美国货币政策与日本加息路径正处于交汇关口...</p><h2>汇率影响</h2><p>近几周日元兑美元大幅波动，出口企业受到广泛关注。</p>'}
+  },
+  { id:'a003', category:'sector', emoji:'💹', thumb:'thumb-3', date:'2024/04/24', time:'16:15', comments:111, views:4200,
+    title:{ja:'夏来浮上、そうに重勤倍期待なるか — 半導体関連株の最新動向', en:'Semiconductor Stocks: Summer Rally Ahead?', zh:'半导体股票：夏季反弹即将到来？'},
+    subtitle:{ja:'国内外の半導体市場トレンドと個別銘柄の投資判断', en:'Global semiconductor trends and individual stock picks', zh:'国内外半导体市场趋势与个股投资判断'},
+    content:{ja:'<p>半導体関連株への注目が再び高まっている。AI需要を背景に...</p><h2>注目銘柄</h2><p>国内では東京エレクトロンやルネサスなど主要銘柄が堅調。</p>',
+             en:'<p>Attention on semiconductor stocks is rising again, driven by AI demand...</p><h2>Stocks to Watch</h2><p>Tokyo Electron and Renesas remain strong domestically.</p>',
+             zh:'<p>在人工智能需求推动下，半导体相关股票再度受到关注...</p><h2>关注个股</h2><p>国内东京电子、瑞萨电子表现稳健。</p>'}
+  },
+  { id:'a004', category:'interview', emoji:'🎙️', thumb:'thumb-4', date:'2024/04/24', time:'16:15', comments:89, views:3100,
+    title:{ja:'株クラ注目投資家インタビュー — 2024年後半の戦略と注目セクター', en:'Investor Interview: H2 2024 Strategy & Sector Picks', zh:'投资者访谈：2024年下半年策略与板块精选'},
+    subtitle:{ja:'著名個人投資家が語る資産形成のコツと銘柄選びの哲学', en:'A top individual investor shares wealth-building tips and stock philosophy', zh:'知名个人投资者分享财富积累秘诀与选股哲学'},
+    content:{ja:'<p>今回インタビューに応じてくださったのは資産10億円超を達成した個人投資家のAさん。</p><h2>後半戦の戦略</h2><p>「金利動向を軸に、ディフェンシブ銘柄とグロース銘柄のバランスを意識している」と語る。</p>',
+             en:'<p>We sit down with investor A, who has built a portfolio exceeding ¥1B.</p><h2>Second Half Strategy</h2><p>"I\'m balancing defensive and growth stocks around interest rate trends."</p>',
+             zh:'<p>本次采访对象是资产超过10亿日元的个人投资者A先生。</p><h2>下半年策略</h2><p>"我围绕利率动向，有意识地平衡防御型与成长型股票的配比。"</p>'}
+  }
+];
+
+let ranking = [
+  {rank:1,name:'Atsu',   desc:'成長株専門・年利30%超え',score:'+7.1%',emoji:'😊',up:true},
+  {rank:2,name:'AKi@',  desc:'テクニカル分析の達人',   score:'+5.0%',emoji:'🧑',up:true},
+  {rank:3,name:'かぶ1000',desc:'配当・優待投資のプロ', score:'+3.8%',emoji:'👩',up:true}
+];
+
+let people = [
+  {name:'AtsJPX',   emoji:'👨‍💼', tag:{ja:'失職→一発逆転の株クラ百戦録',en:'From layoff to comeback — my trading chronicle',zh:'从失业到逆转——我的交易实录'},date:'4/24',ep:2},
+  {name:'AKiの記録', emoji:'🧑‍💻', tag:{ja:'元ITエンジニアの株式投資録',  en:'Stock diary from a former IT engineer',       zh:'前IT工程师的股票投资记录'},date:'4/24',ep:4},
+  {name:'TODOチャレンジ',emoji:'👩‍💼',tag:{ja:'小さな目標を積み重ねる投資日記',en:'Building wealth one small goal at a time',  zh:'一步一步积累小目标的投资日记'},date:'4/24',ep:6},
+  {name:'諦分被調査', emoji:'🧓', tag:{ja:'定年後の資産運用、実録レポート', en:'Real retirement asset management story',    zh:'退休后的资产运营真实记录'},date:'4/25',ep:3}
+];
+
+let comments = {
+  'a001':[
+    {name:'株太郎',emoji:'😊',text:'サンリオの海外展開は本当に注目ですね！',date:'2024/04/24 17:20'},
+    {name:'InvestorA',emoji:'📈',text:'Great analysis on the licensing model shift.',date:'2024/04/24 18:45'}
+  ]
+};
+
+let currentLang = 'ja';
+let currentArticleId = null;
+let adminLang = 'ja';
+let currentFilter = 'all';
+
+// ══ LANGUAGE SWITCH ══
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  const t = T[lang];
+
+  // lang buttons
+  document.querySelectorAll('.lang-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['ja','en','zh'][i] === lang);
+  });
+
+  // static UI elements
+  document.getElementById('btn-search').textContent = t.search;
+  document.getElementById('btn-back').textContent = t.back;
+  document.getElementById('hero-badge').textContent = t.hero_badge;
+  document.getElementById('hero-title').innerHTML = t.hero_title;
+  document.getElementById('hero-sub').textContent = t.hero_sub;
+  document.getElementById('stat1-label').textContent = t.stat1_label;
+  document.getElementById('stat1-name').textContent = t.stat1_name;
+  document.getElementById('stat2-label').textContent = t.stat2_label;
+  document.getElementById('stat2-name').textContent = t.stat2_name;
+  document.getElementById('section-topics').innerHTML = '<span style="display:inline-block;width:3px;height:16px;background:var(--sakura);border-radius:2px;margin-right:8px;vertical-align:middle"></span>' + t.topics;
+  document.getElementById('section-people').innerHTML = '<span style="display:inline-block;width:3px;height:16px;background:var(--sakura);border-radius:2px;margin-right:8px;vertical-align:middle"></span>' + t.people;
+  ['tab-all','tab-stock','tab-macro','tab-interview'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t.tabs[i];
+  });
+  document.getElementById('ranking-title').textContent = t.ranking_title;
+  document.getElementById('ranking-sub').textContent = t.ranking_sub;
+  document.getElementById('ranking-cta').textContent = t.ranking_cta;
+  document.getElementById('premium-title').textContent = t.premium_title;
+  document.getElementById('premium-desc').textContent = t.premium_desc;
+  document.getElementById('premium-btn').textContent = t.premium_btn;
+  document.getElementById('comment-title').textContent = t.comment_title;
+  document.getElementById('comment-info').textContent = t.comment_info;
+  document.getElementById('commentName').placeholder = t.comment_name_ph;
+  document.getElementById('commentText').placeholder = t.comment_ph;
+  document.getElementById('btn-comment-submit').textContent = t.comment_btn;
+  ['footer-terms','footer-privacy','footer-contact'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t.footer[i];
+  });
+
+  // nav
+  const navEls = ['nav-top','nav-browse','nav-talk','nav-investor','nav-diary'];
+  navEls.forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t.nav[i];
+  });
+
+  // dynamic content
+  renderArticles(currentFilter);
+  renderRanking();
+  renderPeople();
+  if (currentArticleId) updateArticleView(currentArticleId);
+}
+
+// ══ VIEWS ══
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0,0);
+  if (name === 'admin') renderAdmin();
+}
+
+function setNavActive(el) {
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══ ARTICLES ══
+function catLabel(key) { return T[currentLang].cat[key] || key; }
+
+function renderArticles(filter) {
+  currentFilter = filter;
+  const data = (!filter || filter==='all') ? articles : articles.filter(a => a.category === filter);
+  document.getElementById('articles-list').innerHTML = data.map(a => `
+    <div class="news-item" onclick="openArticle('${a.id}')">
+      <div class="news-thumb ${a.thumb}">${a.emoji}</div>
+      <div class="news-body">
+        <div class="news-cat">${catLabel(a.category)}</div>
+        <div class="news-title">${a.title[currentLang] || a.title.ja}</div>
+        <div class="news-sub">${a.subtitle[currentLang] || a.subtitle.ja}</div>
+        <div class="news-meta">
+          <span>${a.date} ${a.time}</span>
+          <span>👁 ${a.views.toLocaleString()} ${T[currentLang].views}</span>
+          <span>💬 ${a.comments} ${T[currentLang].comments_word}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterArticles(cat, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderArticles(cat);
+}
+
+// ══ RANKING ══
+function renderRanking() {
+  document.getElementById('ranking-list').innerHTML = ranking.map((r,i) => `
+    <div class="ranking-item">
+      <div class="rank-badge rank-${i+1}">${r.rank}</div>
+      <div class="rank-avatar">${r.emoji}</div>
+      <div class="rank-info">
+        <div class="rank-name">${r.name}</div>
+        <div class="rank-desc">${r.desc}</div>
+      </div>
+      <div class="rank-score" style="color:${r.up?'var(--green-up)':'var(--red-dn)'}">${r.score} ${r.up?'▲':'▼'}</div>
+    </div>
+  `).join('');
+}
+
+// ══ PEOPLE ══
+function renderPeople() {
+  const t = T[currentLang];
+  document.getElementById('people-grid').innerHTML = people.map(p => `
+    <div class="person-card">
+      <div class="person-avatar">${p.emoji}</div>
+      <div class="person-name">${p.name}</div>
+      <div class="person-tag">${p.tag[currentLang] || p.tag.ja}</div>
+      <div class="person-meta"><span>${p.date}</span><span>💬 ${p.ep}${t.episode}</span></div>
+    </div>
+  `).join('');
+}
+
+// ══ ARTICLE VIEW ══
+function openArticle(id) {
+  currentArticleId = id;
+  updateArticleView(id);
+  renderComments(id);
+  showView('article');
+}
+
+function updateArticleView(id) {
+  const a = articles.find(x => x.id === id);
+  if (!a) return;
+  const t = T[currentLang];
+
+  document.getElementById('article-hero').innerHTML = `<span style="font-size:64px">${a.emoji}</span>`;
+  document.getElementById('article-hero').className = 'article-hero ' + a.thumb;
+  document.getElementById('article-cat').textContent = catLabel(a.category);
+  document.getElementById('article-title').textContent = a.title[currentLang] || a.title.ja;
+  document.getElementById('article-meta').innerHTML = `
+    <span>📅 ${a.date} ${a.time}</span>
+    <span>👁 ${a.views.toLocaleString()} ${t.views}</span>
+    <span>💬 ${a.comments} ${t.comments_word}</span>
+  `;
+  document.getElementById('article-content').innerHTML = a.content[currentLang] || a.content.ja;
+
+  // Language selector badge inside article
+  const langs = [{code:'ja',label:'日本語'},{code:'en',label:'EN'},{code:'zh',label:'中文'}];
+  document.getElementById('article-lang-badge').innerHTML = langs
+    .filter(l => a.title[l.code])
+    .map(l => `<span class="${l.code===currentLang?'active':''}" onclick="setLang('${l.code}')">${l.label}</span>`)
+    .join('');
+}
+
+// ══ COMMENTS ══
+function renderComments(id) {
+  const list = comments[id] || [];
+  const t = T[currentLang];
+  const el = document.getElementById('comments-list');
+  el.innerHTML = list.length === 0
+    ? `<div style="text-align:center;color:var(--text-sub);font-size:13px;padding:1.5rem">${t.no_comments}</div>`
+    : list.map(c => `
+      <div class="comment-item">
+        <div class="comment-avatar">${c.emoji}</div>
+        <div class="comment-bubble">
+          <div class="comment-author">${c.name}<span class="comment-date">${c.date}</span></div>
+          <div class="comment-text">${c.text}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+function submitComment() {
+  const name  = document.getElementById('commentName').value.trim() || '匿名';
+  const emoji = document.getElementById('commentEmoji').value.trim() || '😊';
+  const text  = document.getElementById('commentText').value.trim();
+  if (!text) return;
+  if (!comments[currentArticleId]) comments[currentArticleId] = [];
+  const now = new Date();
+  const date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  comments[currentArticleId].push({name,emoji,text,date});
+  document.getElementById('commentName').value = '';
+  document.getElementById('commentEmoji').value = '';
+  document.getElementById('commentText').value = '';
+  renderComments(currentArticleId);
+  showToast(T[currentLang].toast_comment);
+}
+
+// ══ ADMIN ══
+function setAdminLang(lang, btn) {
+  adminLang = lang;
+  document.querySelectorAll('.lang-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['newTitle','newSub','newBody'].forEach(f => {
+    ['ja','en','zh'].forEach(l => {
+      const el = document.getElementById(`${f}_${l}`);
+      if (el) el.style.display = l === lang ? '' : 'none';
+    });
+  });
+}
+
+function renderAdmin() {
+  document.getElementById('admin-table-body').innerHTML = articles.map(a => `
+    <tr>
+      <td>${a.emoji} ${(a.title.ja||'').substring(0,22)}…</td>
+      <td style="text-align:center;color:${a.title.en?'var(--green-up)':'var(--text-sub)'}">${a.title.en?'✓':'—'}</td>
+      <td style="text-align:center;color:${a.title.zh?'var(--green-up)':'var(--text-sub)'}">${a.title.zh?'✓':'—'}</td>
+      <td><span style="background:var(--sakura-pale);color:var(--sakura);font-size:10px;padding:2px 8px;border-radius:10px">${catLabel(a.category)}</span></td>
+      <td>${a.date}</td>
+      <td><div class="tbl-actions">
+        <button class="tbl-btn tbl-btn-edit" onclick="openArticle('${a.id}');showView('article')">確認</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteArticle('${a.id}')">削除</button>
+      </div></td>
+    </tr>
+  `).join('');
+
+  document.getElementById('ranking-edit-list').innerHTML = ranking.map((r,i) => `
+    <div style="display:grid;grid-template-columns:40px 1fr 1fr 120px;gap:10px;align-items:center;margin-bottom:10px">
+      <div style="text-align:center;font-weight:700;color:var(--text-sub)">${i+1}位</div>
+      <input class="form-input" value="${r.name}"  id="rname-${i}" placeholder="名前">
+      <input class="form-input" value="${r.desc}"  id="rdesc-${i}" placeholder="説明">
+      <input class="form-input" value="${r.score}" id="rscore-${i}" placeholder="+0.0%">
+    </div>
+  `).join('');
+}
+
+function addArticle() {
+  const ja = document.getElementById('newTitle_ja').value.trim();
+  if (!ja) { alert('日本語タイトルを入力してください'); return; }
+  const now = new Date();
+  const date = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  const thumbs = ['thumb-1','thumb-2','thumb-3','thumb-4'];
+  articles.unshift({
+    id: 'a' + Date.now(), category: document.getElementById('newCategory').value,
+    emoji: document.getElementById('newEmoji').value.trim() || '📝',
+    thumb: thumbs[Math.floor(Math.random()*4)],
+    date, time: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    comments:0, views:0,
+    title:{ja, en:document.getElementById('newTitle_en').value.trim(), zh:document.getElementById('newTitle_zh').value.trim()},
+    subtitle:{ja:document.getElementById('newSub_ja').value.trim(), en:document.getElementById('newSub_en').value.trim(), zh:document.getElementById('newSub_zh').value.trim()},
+    content:{ja:`<p>${document.getElementById('newBody_ja').value.trim()}</p>`, en:`<p>${document.getElementById('newBody_en').value.trim()}</p>`, zh:`<p>${document.getElementById('newBody_zh').value.trim()}</p>`}
+  });
+  renderArticles('all');
+  renderAdmin();
+  clearForm();
+  showToast(T[currentLang].toast_add);
+}
+
+function clearForm() {
+  ['newTitle_ja','newTitle_en','newTitle_zh','newSub_ja','newSub_en','newSub_zh','newBody_ja','newBody_en','newBody_zh','newEmoji']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function deleteArticle(id) {
+  if (!confirm('この記事を削除しますか？')) return;
+  articles = articles.filter(a => a.id !== id);
+  renderArticles(currentFilter);
+  renderAdmin();
+  showToast(T[currentLang].toast_del);
+}
+
+function saveRanking() {
+  ranking.forEach((r,i) => {
+    r.name  = document.getElementById(`rname-${i}`).value;
+    r.desc  = document.getElementById(`rdesc-${i}`).value;
+    r.score = document.getElementById(`rscore-${i}`).value;
+  });
+  renderRanking();
+  showToast(T[currentLang].toast_rank);
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) return;
+  const found = articles.find(a =>
+    Object.values(a.title).some(v => v.toLowerCase().includes(q)) ||
+    Object.values(a.subtitle).some(v => v.toLowerCase().includes(q))
+  );
+  if (found) openArticle(found.id);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// SAKURA
+const pc = document.getElementById('petals');
+for (let i=0;i<14;i++) {
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.style.left = Math.random()*100+'%';
+  p.style.animationDuration = (4+Math.random()*5)+'s';
+  p.style.animationDelay = (Math.random()*7)+'s';
+  p.style.opacity = (0.2+Math.random()*0.4).toString();
+  pc.appendChild(p);
+}
+
+// INIT
+renderArticles('all');
+renderRanking();
+renderPeople();
+</script>
+</body>
+</html>
