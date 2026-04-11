@@ -592,6 +592,13 @@ function setLang(lang) {
 
 // ══ VIEWS ══
 function showView(name) {
+  if (name === 'admin') {
+    const pass = prompt('管理画面のパスワードを入力してください');
+    if (pass !== 'Kabukuraconnection2026') {
+      alert('パスワードが違います');
+      return;
+    }
+  }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   window.scrollTo(0,0);
